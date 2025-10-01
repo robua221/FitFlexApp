@@ -4,28 +4,29 @@ import { collection, addDoc, deleteDoc, getDocs, query, where, doc } from 'fireb
 // Add favorite
 export const addFavorite = async (userId, exercise) => {
   try {
+   
     const docRef = await addDoc(collection(db, 'favorites'), {
       userId,
-      ...exercise, // includes exercise.id, name, etc.
+      ...exercise,
+      gifUrl: exercise.gifUrl || '', 
     });
-    return docRef.id; // Firestore doc ID
+    return docRef.id;
   } catch (error) {
     console.error("Error adding favorite:", error);
   }
 };
 
-// Remove favorite by exercise.id
+// Remove favorite by ID
 export const removeFavorite = async (userId, exerciseId) => {
   try {
     const q = query(
       collection(db, 'favorites'),
       where('userId', '==', userId),
-      where('id', '==', exerciseId) // match exercise.id
+      where('id', '==', exerciseId)
     );
     const snapshot = await getDocs(q);
-    for (const document of snapshot.docs) {
-      await deleteDoc(doc(db, 'favorites', document.id));
-    }
+    const promises = snapshot.docs.map(document => deleteDoc(doc(db, 'favorites', document.id)));
+    await Promise.all(promises);
   } catch (error) {
     console.error("Error removing favorite:", error);
   }
@@ -36,10 +37,7 @@ export const getFavoritesByUser = async (userId) => {
   try {
     const q = query(collection(db, 'favorites'), where('userId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(document => ({
-      docId: document.id, // Firestore document ID
-      ...document.data(), // exercise fields
-    }));
+    return snapshot.docs.map(doc => doc.data());
   } catch (error) {
     console.error("Error fetching favorites:", error);
     return [];
@@ -51,9 +49,8 @@ export const clearFavorites = async (userId) => {
   try {
     const q = query(collection(db, 'favorites'), where('userId', '==', userId));
     const snapshot = await getDocs(q);
-    for (const document of snapshot.docs) {
-      await deleteDoc(doc(db, 'favorites', document.id));
-    }
+    const deletePromises = snapshot.docs.map(document => deleteDoc(doc(db, 'favorites', document.id)));
+    await Promise.all(deletePromises); 
   } catch (error) {
     console.error("Error clearing favorites:", error);
   }

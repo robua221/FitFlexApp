@@ -6,6 +6,7 @@ import { COLORS } from '../utils/theme';
 import { addFavorite, removeFavorite, getFavoritesByUser } from '../utils/firebaseUtils';
 import { auth } from '../firebase/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ExploreScreen() {
   const [loading, setLoading] = useState(true);
@@ -14,36 +15,67 @@ export default function ExploreScreen() {
   const [search, setSearch] = useState("");
   const user = auth.currentUser;
 
+  // Fetch exercises only once
   useEffect(() => {
-    fetchExercises().then(data => {
+    const loadData = async () => {
+      const data = await fetchExercises();
       setExercises(data);
       setLoading(false);
-    });
-    getFavoritesByUser(user.uid).then(setFavs);
+    };
+    loadData();
   }, []);
 
+  // Refresh favorites whenever screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!user?.uid) return;
+
+      const fetchFavs = async () => {
+        const favsData = await getFavoritesByUser(user.uid);
+        setFavs(favsData);
+      };
+
+      fetchFavs();
+    }, [])
+  );
+
+  // Toggle add/remove favorite safely
   const toggleFavorite = async (item) => {
-    if (favs.find(f => f.id === item.id)) {
+    if (!user?.uid) return;
+
+    const isFav = favs.find(f => f.id === item.id);
+
+    if (isFav) {
       await removeFavorite(user.uid, item.id);
-      setFavs(favs.filter(f => f.id !== item.id));
+      setFavs(prev => prev.filter(f => f.id !== item.id));
     } else {
-      await addFavorite(user.uid, item);
-      setFavs([...favs, item]);
+      const safeItem = {
+        id: item.id?.toString() || Date.now().toString(),
+        name: item.name || "Unknown",
+        gifUrl: item.gifUrl ?? "",       
+        bodyPart: item.bodyPart || "",
+        equipment: item.equipment || "",
+        target: item.target || "",
+      };
+
+      await addFavorite(user.uid, safeItem);
+      setFavs(prev => [...prev, safeItem]);
     }
   };
 
-  // Filter exercises by search term
+  // Filter exercises by search term (case-insensitive)
   const filteredExercises = exercises.filter((item) =>
     item.bodyPart.toLowerCase().includes(search.toLowerCase()) ||
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <ActivityIndicator size="large" color={COLORS.primary} style={{flex:1}} />;
-  
+  if (loading) {
+    return <ActivityIndicator size="large" color={COLORS.primary} style={{ flex: 1 }} />;
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background, padding:15 }}>
-      
-      
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background, padding: 15 }}>
+      {/* Search Bar */}
       <TextInput
         placeholder="Search exercises (e.g., abs, push-up)..."
         placeholderTextColor="#999"
@@ -61,10 +93,10 @@ export default function ExploreScreen() {
           return (
             <ExerciseCard
               item={item}
-              onPress={toggleFavorite}
+              onPress={() => toggleFavorite(item)}
               isFavorite={isFav}
-              showFavoriteIcon={true}  
-               searchTerm={search} 
+              showFavoriteIcon={true}
+              searchTerm={search}
             />
           );
         }}

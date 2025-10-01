@@ -14,7 +14,7 @@ const options = {
 export const fetchExercises = async () => {
   try {
     const response = await axios.request(options);
-    return response.data.slice(0, 20); 
+    return response.data.slice(0, 50); 
   } catch (error) {
     console.error('Failed to fetch exercises:', error.message);
     return [];

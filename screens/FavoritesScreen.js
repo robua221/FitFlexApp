@@ -1,28 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import { getFavoritesByUser, removeFavorite, clearFavorites } from '../utils/firebaseUtils';
 import { auth } from '../firebase/config';
 import ExerciseCard from '../components/ExerciseCard';
 import { COLORS, FONTS } from '../utils/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState([]);
   const user = auth.currentUser;
 
-  
-  useEffect(() => {
-  if (user?.uid) {
-    getFavoritesByUser(user.uid).then(favs => {
-      
-      const uniqueFavs = favs.filter((item, index, arr) =>
-        arr.findIndex(i => i.id === item.id) === index
-      );
-      setFavorites(uniqueFavs);
-    });
-  }
-}, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.uid) return;
 
+      const fetchFavs = async () => {
+        const favs = await getFavoritesByUser(user.uid);
+
+        // Remove duplicate entries
+        const uniqueFavs = favs.filter(
+          (item, index, arr) => arr.findIndex(i => i.id === item.id) === index
+        );
+
+        setFavorites(uniqueFavs);
+      };
+
+      fetchFavs();
+    }, [user])
+  );
 
   const handleRemove = (exerciseId) => {
     Alert.alert(
@@ -78,6 +84,8 @@ export default function FavoritesScreen() {
           <ExerciseCard
             item={item}
             onPress={() => handleRemove(item.id)}
+            showFavoriteIcon={true}
+            isFavorite={true}
           />
         )}
       />
