@@ -3,6 +3,7 @@
 **Course ID:** T440  
 **Developer:** Robin Alexander  
 **Roll Number:** 101471125 
+** Jira:** https://robin-alexander.atlassian.net/jira/software/projects/KAN/boards/1?atlOrigin=eyJpIjoiOGQzYzI0ODNmYjM4NDc5Mzk3ZDQ1MjY5Nzc0OTAyYTQiLCJwIjoiaiJ9
 
 FitFlex is a mobile fitness app built with **React Native**, **Firebase**, and **Expo**, designed to help users explore exercises, save favorites, locate nearby gyms, and track their fitness routine.
 
@@ -57,3 +58,4 @@ FitFlex is a mobile fitness app built with **React Native**, **Firebase**, and *
 ```bash
 git clone https://github.com/robua221/FitFlexApp.git
 cd fitflex
+
