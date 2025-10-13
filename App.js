@@ -22,7 +22,7 @@ export default function App() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="medium" color={COLORS.primary} />
       </View>
     );
   }
