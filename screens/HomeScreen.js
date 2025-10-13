@@ -22,7 +22,7 @@ export default function HomeScreen({ navigation }) {
          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('NearbyGyms')}>
         <Text style={FONTS.button}>NearbyGyms</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AIAssitant')}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AIAssistant')}>
   <Text style={FONTS.button}>AI Assistant</Text>
  
 

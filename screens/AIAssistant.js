@@ -64,7 +64,7 @@ export default function AIAssistant() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, padding: 20 },
-  title: { ...FONTS.title, marginBottom: 20 },
+  title: { ...FONTS.title, marginBottom: 20 , marginTop:30},
   input: {
     backgroundColor: "#222",
     color: "#fff",

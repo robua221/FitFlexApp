@@ -18,7 +18,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
-<Stack.Screen name="AIAssitant" component={AIAssistant} />
+<Stack.Screen name="AIAssistant" component={AIAssistant} />
 <Stack.Screen name="ExerciseVideos" component={ExerciseVideosScreen} />
 
       </Stack.Navigator>
