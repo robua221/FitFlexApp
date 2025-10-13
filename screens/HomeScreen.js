@@ -27,16 +27,11 @@ export default function HomeScreen({ navigation }) {
         <Text style={FONTS.button}>Nearby Gyms</Text>
       </TouchableOpacity>
 
-      {/* New AI Assistant button */}
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('AIAssistant')}>
         <Text style={FONTS.button}>AI Calorie Tracker</Text>
       </TouchableOpacity>
 
-      {/* New Exercise Videos button */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('ExerciseVideos', { bodyPart: '' })}
-      >
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ExerciseVideos')}>
         <Text style={FONTS.button}>Exercise Videos</Text>
       </TouchableOpacity>
 
@@ -49,5 +44,5 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: COLORS.background },
-  button: { backgroundColor: COLORS.primary, padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 10 },
+  button: { backgroundColor: COLORS.primary, padding: 15, borderRadius: 10, alignItems: 'center', marginVertical: 10 }
 });

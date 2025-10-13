@@ -51,7 +51,7 @@ export default function ExerciseVideosScreen({ route }) {
       ) : (
         <>
           <TouchableOpacity style={styles.backButton} onPress={resetSearch}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>← Back</Text>
+            <Text style={{ color: '#fff', fontWeight: 'bold'  }}>← Back</Text>
           </TouchableOpacity>
           <WebView
             source={{ uri: url }}
@@ -66,7 +66,7 @@ export default function ExerciseVideosScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, padding: 20 },
+  container: { flex: 1, backgroundColor: COLORS.background, padding: 20 , marginTop:30},
   input: {
     backgroundColor: '#222',
     color: '#fff',
@@ -85,7 +85,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#6E44FF',
     padding: 10,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 10,
+    marginTop:20
   },
 });

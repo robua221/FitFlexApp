@@ -11,7 +11,7 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigation.replace('MainTabs');
+      navigation.replace('Home');
     } catch (error) {
       Alert.alert("Login Error", error.message);
     }

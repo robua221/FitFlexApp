@@ -6,7 +6,6 @@ import { COLORS } from '../utils/theme';
 import { addFavorite, removeFavorite, getFavoritesByUser } from '../utils/firebaseUtils';
 import { auth } from '../firebase/config';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 
 export default function ExploreScreen() {
   const [loading, setLoading] = useState(true);
@@ -15,31 +14,20 @@ export default function ExploreScreen() {
   const [search, setSearch] = useState("");
   const user = auth.currentUser;
 
-  // Fetch exercises only once
   useEffect(() => {
     const loadData = async () => {
       const data = await fetchExercises();
       setExercises(data);
       setLoading(false);
+
+      if (user?.uid) {
+        const favsData = await getFavoritesByUser(user.uid);
+        setFavs(favsData);
+      }
     };
     loadData();
   }, []);
 
-  // Refresh favorites whenever screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!user?.uid) return;
-
-      const fetchFavs = async () => {
-        const favsData = await getFavoritesByUser(user.uid);
-        setFavs(favsData);
-      };
-
-      fetchFavs();
-    }, [])
-  );
-
-  // Toggle add/remove favorite safely
   const toggleFavorite = async (item) => {
     if (!user?.uid) return;
 
@@ -52,7 +40,7 @@ export default function ExploreScreen() {
       const safeItem = {
         id: item.id?.toString() || Date.now().toString(),
         name: item.name || "Unknown",
-        gifUrl: item.gifUrl ?? "",       
+        gifUrl: item.gifUrl ?? "",
         bodyPart: item.bodyPart || "",
         equipment: item.equipment || "",
         target: item.target || "",
@@ -63,19 +51,15 @@ export default function ExploreScreen() {
     }
   };
 
-  // Filter exercises by search term (case-insensitive)
   const filteredExercises = exercises.filter((item) =>
     item.bodyPart.toLowerCase().includes(search.toLowerCase()) ||
     item.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) {
-    return <ActivityIndicator size="large" color={COLORS.primary} style={{ flex: 1 }} />;
-  }
+  if (loading) return <ActivityIndicator size="large" color={COLORS.primary} style={{ flex: 1 }} />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background, padding: 15 }}>
-      {/* Search Bar */}
       <TextInput
         placeholder="Search exercises (e.g., abs, push-up)..."
         placeholderTextColor="#999"
@@ -84,7 +68,6 @@ export default function ExploreScreen() {
         style={styles.searchBar}
       />
 
-      {/* Exercise List */}
       <FlatList
         data={filteredExercises}
         keyExtractor={(item) => item.id.toString()}

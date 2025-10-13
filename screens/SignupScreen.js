@@ -11,7 +11,9 @@ export default function SignupScreen({ navigation }) {
   const handleSignup = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      navigation.replace('MainTabs');
+      Alert.alert("User account created successfully !!", );
+      navigation.replace('Login');
+
     } catch (error) {
       Alert.alert("Signup Error", error.message);
       console.log(error)

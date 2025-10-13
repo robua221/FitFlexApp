@@ -39,7 +39,7 @@ export default function AIAssistant() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 50 }}>
-      <Text style={styles.title}>🍎 AI Calorie Tracker</Text>
+      <Text style={styles.title}>🍎 AI Assistant</Text>
       <TextInput
         placeholder="Type your meal or workout..."
         placeholderTextColor="#aaa"
