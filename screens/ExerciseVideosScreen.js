@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { COLORS, FONTS } from '../utils/theme';
 
-export default function ExerciseVideosScreen() {
-  const [bodyPart, setBodyPart] = useState('');
+export default function ExerciseVideosScreen({ route }) {
+  const bodyPartFromRoute = route?.params?.bodyPart || '';
+  const [bodyPart, setBodyPart] = useState(bodyPartFromRoute);
   const [url, setUrl] = useState('');
 
-  const searchVideos = () => {
-    if (!bodyPart.trim()) return;
-    const query = encodeURIComponent(`${bodyPart} workout`);
+  useEffect(() => {
+    // If bodyPart is passed from navigation, load videos automatically
+    if (bodyPartFromRoute) {
+      searchVideos(bodyPartFromRoute);
+    }
+  }, [bodyPartFromRoute]);
+
+  const searchVideos = (bp) => {
+    const query = encodeURIComponent((bp || bodyPart) + ' workout');
     const youtubeUrl = `https://www.youtube.com/results?search_query=${query}`;
     setUrl(youtubeUrl);
     Keyboard.dismiss();
+  };
+
+  const resetSearch = () => {
+    setUrl('');
+    setBodyPart('');
   };
 
   return (
@@ -29,17 +41,25 @@ export default function ExerciseVideosScreen() {
             style={styles.input}
           />
 
-          <TouchableOpacity style={styles.button} onPress={searchVideos}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => searchVideos()}
+          >
             <Text style={FONTS.button}>Search</Text>
           </TouchableOpacity>
         </>
       ) : (
-        <WebView
-          source={{ uri: url }}
-          style={{ flex: 1 }}
-          startInLoadingState
-          scalesPageToFit
-        />
+        <>
+          <TouchableOpacity style={styles.backButton} onPress={resetSearch}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>← Back</Text>
+          </TouchableOpacity>
+          <WebView
+            source={{ uri: url }}
+            style={{ flex: 1 }}
+            startInLoadingState
+            scalesPageToFit
+          />
+        </>
       )}
     </View>
   );
@@ -60,5 +80,12 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  backButton: {
+    backgroundColor: '#6E44FF',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });

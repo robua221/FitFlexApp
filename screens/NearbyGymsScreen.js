@@ -69,7 +69,7 @@ export default function NearbyGymsScreen() {
 
   return (
     <MapView
-      style={{ flex: 1 }}
+      style={{ flex: 1,margin:20 }}
       initialRegion={{
         latitude: location?.latitude || 37.78825,
         longitude: location?.longitude || -122.4324,
