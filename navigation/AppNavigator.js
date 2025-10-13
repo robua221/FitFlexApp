@@ -19,8 +19,8 @@ export default function AppNavigator() {
       <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{
-          headerShown: false,   // No header on any screen
-          gestureEnabled: true,  // Enable swipe gestures
+          headerShown: false,   
+          gestureEnabled: true,  
         }}
       >
         {/* Authentication */}

@@ -1,12 +1,12 @@
 
 import axios from 'axios';
-
+import {EXERCISE_IMAGE,EXERCISE_RAPIDAPI_KEY,EXERCISE_RAPIDAPI_HOST} from '@env'
 const options = {
   method: 'GET',
-  baseURL: 'https://exercisedb.p.rapidapi.com/image',
+  baseURL: EXERCISE_IMAGE,
   headers: {
-      'x-rapidapi-key': 'e068936fdfmshc1c299760b8c16ep1e2f3ejsn898441aaa8c7',
-    'x-rapidapi-host': 'exercisedb.p.rapidapi.com'
+   'x-rapidapi-key': EXERCISE_RAPIDAPI_KEY,
+    'x-rapidapi-host': EXERCISE_RAPIDAPI_HOST
   },
 };
 

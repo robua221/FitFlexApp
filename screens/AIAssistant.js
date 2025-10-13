@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { GoogleGenAI } from "@google/genai";
 import { COLORS, FONTS } from "../utils/theme";
+import {GEMINI_API_KEY } from "@env"
 
-// ⚠️ Put your API key here directly
-const GEMINI_API_KEY = "AIzaSyCuv13i0x2HbK8Mx5C9-JN3pzK3yY_5xxw"; 
+
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 export default function AIAssistant() {
@@ -19,7 +19,7 @@ export default function AIAssistant() {
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", // or gemini-1.5-flash
+        model: "gemini-2.5-flash", 
         contents: `
         You are a nutrition and fitness assistant.
         The user will describe a meal or workout.

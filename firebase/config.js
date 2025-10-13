@@ -2,18 +2,27 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID,
+  GOOGLE_PLACES_API_KEYS
+} from '@env';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBE4TeATdLXMc2yyxr0MeoV2YWttw5NYmc",
-  authDomain: "fitflex-b8ab2.firebaseapp.com",
-  projectId: "fitflex-b8ab2",
-  storageBucket: "fitflex-b8ab2.firebasestorage.app",
-  messagingSenderId: "892811387550",
-  appId: "1:892811387550:web:be1b3bd51df03ffc0d918f"
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID
 };
 const app = initializeApp(firebaseConfig);
 
-const GOOGLE_PLACES_API_KEY = "AIzaSyBSSAAo7L0ZngxlI291ihg1jo46x5kk6BI";
+const GOOGLE_PLACES_API_KEY = GOOGLE_PLACES_API_KEYS;
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });

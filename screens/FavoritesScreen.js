@@ -97,9 +97,9 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: COLORS.background },
+  container: { flex: 1, padding: 15, backgroundColor: COLORS.background,marginTop:40 },
   emptyContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background
+    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background,
   },
   clearButton: {
     backgroundColor: COLORS.danger,

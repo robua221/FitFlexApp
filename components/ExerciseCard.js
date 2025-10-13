@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Buffer } from 'buffer';
 import { COLORS } from '../utils/theme';
 import { MaterialIcons } from '@expo/vector-icons'; 
-
+import {EXERCISE_IMAGE,EXERCISE_RAPIDAPI_KEY,EXERCISE_RAPIDAPI_HOST} from '@env'
 global.Buffer = Buffer;
 
 const ExerciseCard = ({ item, onPress, isFavorite = false, showFavoriteIcon = false }) => {
@@ -14,14 +14,14 @@ const ExerciseCard = ({ item, onPress, isFavorite = false, showFavoriteIcon = fa
   useEffect(() => {
     const fetchGif = async () => {
       try {
-        const response = await axios.get('https://exercisedb.p.rapidapi.com/image', {
+        const response = await axios.get(EXERCISE_IMAGE, {
           params: {
             exerciseId: item.id,
             resolution: '360',
           },
           headers: {
-            'x-rapidapi-key': 'e068936fdfmshc1c299760b8c16ep1e2f3ejsn898441aaa8c7',
-            'x-rapidapi-host': 'exercisedb.p.rapidapi.com',
+         'x-rapidapi-key': EXERCISE_RAPIDAPI_KEY,
+          'x-rapidapi-host': EXERCISE_RAPIDAPI_HOST
           },
           responseType: 'arraybuffer',
         });
@@ -46,7 +46,7 @@ const ExerciseCard = ({ item, onPress, isFavorite = false, showFavoriteIcon = fa
         <Image source={{ uri: gifUri }} style={styles.gif} resizeMode="cover" />
       )}
 
-      {/* ❤️ Favorite icon (top right) */}
+     
       {showFavoriteIcon && (
         <TouchableOpacity style={styles.heartIcon} onPress={() => onPress(item)}>
           <MaterialIcons

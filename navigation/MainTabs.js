@@ -12,7 +12,7 @@ export default function MainTabs() {
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
-        headerShown: false, // hides headers
+        headerShown: false, 
         tabBarLabelStyle: { fontWeight: 'bold', fontSize: 14 },
         tabBarStyle: { backgroundColor: '#6E44FF' },
         tabBarActiveTintColor: '#fff',

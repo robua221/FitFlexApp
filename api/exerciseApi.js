@@ -1,13 +1,13 @@
 import axios from 'axios';
-
-const BASE_URL = 'https://exercisedb.p.rapidapi.com/exercises';
+import {EXERCISE_BASE_URL,EXERCISE_RAPIDAPI_KEY,EXERCISE_RAPIDAPI_HOST} from '@env'
+const BASE_URL = EXERCISE_BASE_URL;
 
 const options = {
   method: 'GET',
   url: BASE_URL,
  headers: {
-    'x-rapidapi-key': 'e068936fdfmshc1c299760b8c16ep1e2f3ejsn898441aaa8c7',
-    'x-rapidapi-host': 'exercisedb.p.rapidapi.com'
+    'x-rapidapi-key': EXERCISE_RAPIDAPI_KEY,
+    'x-rapidapi-host': EXERCISE_RAPIDAPI_HOST
   }
 };
 

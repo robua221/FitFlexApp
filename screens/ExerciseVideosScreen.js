@@ -9,7 +9,7 @@ export default function ExerciseVideosScreen({ route }) {
   const [url, setUrl] = useState('');
 
   useEffect(() => {
-    // If bodyPart is passed from navigation, load videos automatically
+   
     if (bodyPartFromRoute) {
       searchVideos(bodyPartFromRoute);
     }
