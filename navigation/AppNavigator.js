@@ -10,6 +10,7 @@ import AIAssistant from '../screens/AIAssistant';
 import ExerciseVideosScreen from '../screens/ExerciseVideosScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import DashboardScreen from '../screens/DashboardScreen';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +35,8 @@ export default function AppNavigator() {
         <Stack.Screen name="NearbyGyms" component={NearbyGymsScreen} />
         <Stack.Screen name="AIAssistant" component={AIAssistant} />
         <Stack.Screen name="ExerciseVideos" component={ExerciseVideosScreen} />
+       <Stack.Screen name="Dashboard" component={DashboardScreen} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

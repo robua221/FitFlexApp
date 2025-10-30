@@ -34,6 +34,9 @@ export default function HomeScreen({ navigation }) {
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ExerciseVideos')}>
         <Text style={FONTS.button}>Exercise Videos</Text>
       </TouchableOpacity>
+       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Dashboard')}>
+        <Text style={FONTS.button}>Dashboard</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={[styles.button, { backgroundColor: COLORS.danger }]} onPress={handleLogout}>
         <Text style={FONTS.button}>Log Out</Text>
