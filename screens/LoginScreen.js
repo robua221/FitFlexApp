@@ -19,6 +19,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      
       <Text style={FONTS.title}>Welcome !!</Text>
       <TextInput style={styles.input} placeholder="Email" onChangeText={setEmail} />
       <TextInput style={styles.input} placeholder="Password" secureTextEntry onChangeText={setPassword} />
