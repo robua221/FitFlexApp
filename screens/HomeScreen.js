@@ -40,6 +40,10 @@ export default function HomeScreen({ navigation }) {
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('ActivityTracker')}>
   <Text style={FONTS.button}>Track Activity</Text>
 </TouchableOpacity>
+<TouchableOpacity style={styles.button} onPress={() => navigation.navigate('StepCounter')}>
+  <Text style={FONTS.button}>Step Counter</Text>
+</TouchableOpacity>
+
 
 
       <TouchableOpacity style={[styles.button, { backgroundColor: COLORS.danger }]} onPress={handleLogout}>

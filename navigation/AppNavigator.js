@@ -12,6 +12,7 @@ import LoginScreen from "../screens/LoginScreen";
 import SignupScreen from "../screens/SignupScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import ActivityTrackerScreen from "../screens/ActivityTrackerScreen";
+import StepCounterScreen from "../screens/StepCounterScreen";
 
 const Stack = createStackNavigator();
 
@@ -37,10 +38,12 @@ export default function AppNavigator() {
         <Stack.Screen name="AIAssistant" component={AIAssistant} />
         <Stack.Screen name="ExerciseVideos" component={ExerciseVideosScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
+<Stack.Screen name="StepCounter" component={StepCounterScreen} />
 
         <Stack.Screen
           name="ActivityTracker"
           component={ActivityTrackerScreen}
+
         />
       </Stack.Navigator>
     </NavigationContainer>
