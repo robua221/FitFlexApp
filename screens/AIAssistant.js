@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { GoogleGenAI } from "@google/genai";
 import { COLORS, FONTS } from "../utils/theme";
-import {GEMINI_API_KEY } from "@env"
-
+import { GEMINI_API_KEY } from "@env";
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
@@ -19,16 +18,31 @@ export default function AIAssistant() {
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", 
+        model: "gemini-2.5-flash",
         contents: `
-        You are a nutrition and fitness assistant.
-        The user will describe a meal or workout.
-        Respond with an estimated calorie count and a short macronutrient breakdown (protein, carbs, fats).
+        You are a helpful fitness and nutrition assistant.
+        The user will describe a meal or a workout.
+        Provide:
+        - Estimated total calories
+        - Protein / Carbs / Fat breakdown
+        - A simple explanation in 2–3 lines
+        
+        Avoid using bullet points, stars, or markdown formatting.
+        Keep the answer clean and simple.
+        
         Description: ${input}
         `,
       });
 
-      setResult(response.text);
+      let text = response.text;
+
+      // REMOVE ALL '*' FROM OUTPUT
+      text = text.replace(/\*/g, "");
+
+      // REMOVE markdown-style " - " bullets
+      text = text.replace(/^- /gm, "");
+
+      setResult(text.trim());
     } catch (error) {
       console.error("AI Error:", error);
       setResult("⚠️ Something went wrong. Try again later.");
@@ -40,6 +54,7 @@ export default function AIAssistant() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 50 }}>
       <Text style={styles.title}>🍎 AI Assistant</Text>
+
       <TextInput
         placeholder="Type your meal or workout..."
         placeholderTextColor="#aaa"
@@ -64,7 +79,7 @@ export default function AIAssistant() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, padding: 20 },
-  title: { ...FONTS.title, marginBottom: 20 , marginTop:30},
+  title: { ...FONTS.title, marginBottom: 20, marginTop: 30 },
   input: {
     backgroundColor: "#222",
     color: "#fff",
