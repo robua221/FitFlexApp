@@ -1,4 +1,3 @@
-// screens/FavoritesScreen.js
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -15,7 +14,7 @@ import {
 } from "../utils/firebaseUtils";
 import { auth } from "../firebase/config";
 import ExerciseCard from "../components/ExerciseCard";
-import { COLORS } from "../utils/theme";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -34,10 +33,9 @@ export default function FavoritesScreen() {
       }
     };
 
-    const unsubscribe = setInterval(loadFavorites, 2000);
+    const timer = setInterval(loadFavorites, 1500);
     loadFavorites();
-
-    return () => clearInterval(unsubscribe);
+    return () => clearInterval(timer);
   }, [user?.uid]);
 
   const handleRemove = (exerciseId) => {
@@ -55,93 +53,119 @@ export default function FavoritesScreen() {
   };
 
   const handleClearAll = () => {
-    Alert.alert("Clear All", "Clear all favorite exercises?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear",
-        style: "destructive",
-        onPress: async () => {
-          await clearFavorites(user.uid);
-          setFavorites([]);
+    Alert.alert(
+      "Clear All Favorites",
+      "Are you sure you want to remove all exercises?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            await clearFavorites(user.uid);
+            setFavorites([]);
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   if (!favorites.length) {
     return (
-      <SafeAreaView style={styles.emptyContainer}>
-        <Ionicons name="heart-dislike-outline" size={56} color="#666" />
-        <Text style={styles.emptyTitle}>No favorites yet</Text>
+      <LinearGradient
+        colors={["#05040A", "#120533", "#2E005D"]}
+        style={styles.emptyContainer}
+      >
+        <Ionicons name="heart-dislike-outline" size={70} color="#999" />
+        <Text style={styles.emptyTitle}>No Favorites Yet</Text>
         <Text style={styles.emptyText}>
           Explore exercises and tap the heart icon to save your favorites 💪
         </Text>
-      </SafeAreaView>
+      </LinearGradient>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>My Favorites</Text>
-        <TouchableOpacity onPress={handleClearAll}>
-          <Text style={styles.clearText}>Clear All</Text>
-        </TouchableOpacity>
-      </View>
+    <LinearGradient
+      colors={["#05040A", "#120533", "#2E005D"]}
+      style={styles.container}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>My Favorites</Text>
 
-      <FlatList
-        data={favorites}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => (
-          <ExerciseCard item={item} onPress={() => handleRemove(item.id)} />
-        )}
-      />
-    </SafeAreaView>
+          <TouchableOpacity style={styles.clearButton} onPress={handleClearAll}>
+            <Ionicons name="trash-outline" size={16} color="#fff" />
+            <Text style={styles.clearText}>Clear All</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* List */}
+        <FlatList
+          data={favorites}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ paddingBottom: 30 }}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ExerciseCard item={item} onPress={() => handleRemove(item.id)} />
+          )}
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
-    paddingTop: 10,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 12,
     marginBottom: 8,
-    marginTop: 6,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 22,
     color: "#fff",
+    fontWeight: "800",
+  },
+  clearButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 70, 70, 0.25)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,70,70,0.4)",
   },
   clearText: {
-    color: "#ff6b6b",
-    fontSize: 14,
+    color: "#fff",
+    marginLeft: 6,
+    fontSize: 13,
     fontWeight: "600",
   },
   emptyContainer: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    alignItems: "center",
+    padding: 30,
     justifyContent: "center",
-    paddingHorizontal: 30,
+    alignItems: "center",
   },
   emptyTitle: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    marginTop: 12,
+    marginTop: 14,
   },
   emptyText: {
     color: "#ccc",
-    marginTop: 8,
-    textAlign: "center",
     fontSize: 14,
+    textAlign: "center",
+    marginTop: 6,
+    maxWidth: "80%",
   },
 });

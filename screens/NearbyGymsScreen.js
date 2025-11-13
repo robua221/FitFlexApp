@@ -1,190 +1,289 @@
-// screens/NearbyGymsScreen.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  ActivityIndicator,
   StyleSheet,
+  ActivityIndicator,
   Platform,
   Linking,
   FlatList,
   TouchableOpacity,
   Dimensions,
-  ScrollView,
-} from 'react-native';
-import * as Location from 'expo-location';
-import MapView, { Marker } from 'react-native-maps';
-import { COLORS } from '../utils/theme';
+} from "react-native";
+import * as Location from "expo-location";
+import MapView, { Marker } from "react-native-maps";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 
-const GOOGLE_PLACES_API_KEY = 'AIzaSyBSSAAo7L0ZngxlI291ihg1jo46x5kk6BI'; 
+const GOOGLE_PLACES_API_KEY = "AIzaSyBSSAAo7L0ZngxlI291ihg1jo46x5kk6BI";
 
 export default function NearbyGymsScreen() {
   const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
   const [gyms, setGyms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // Request location permissions
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        setLoading(false);
-        return;
-      }
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          setErrorMsg("Location permission denied");
+          setLoading(false);
+          return;
+        }
 
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation.coords);
+        const loc = await Location.getCurrentPositionAsync({});
+        setLocation(loc.coords);
+      } catch (e) {
+        setErrorMsg("Could not get your location");
+        setLoading(false);
+      }
     })();
   }, []);
 
-  // Fetch nearby gyms
   useEffect(() => {
     if (!location) return;
 
-    const fetchNearbyGyms = async () => {
+    const fetchGyms = async () => {
       try {
-        const { latitude, longitude } = location;
-        const radius = 20000;
-        const type = 'gym';
-        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=${type}&key=${GOOGLE_PLACES_API_KEY}`;
+        const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=8000&type=gym&key=${GOOGLE_PLACES_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-        const response = await fetch(url);
-        const data = await response.json();
-        setGyms(data.results);
-      } catch (error) {
-        console.error('Error fetching nearby gyms:', error);
+        if (data.status !== "OK") {
+          console.log("Places API error:", data.status, data.error_message);
+        }
+
+        setGyms(data.results || []);
+      } catch (err) {
+        console.log("Error fetching gyms:", err);
+        setErrorMsg("Error fetching gyms");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNearbyGyms();
+    fetchGyms();
   }, [location]);
 
-  const openMap = (lat, lng, name) => {
+  const openMap = (lat, lng) => {
     const url =
-      Platform.OS === 'ios'
-        ? `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`
+      Platform.OS === "ios"
+        ? `http://maps.apple.com/?daddr=${lat},${lng}`
         : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
     Linking.openURL(url);
   };
 
-  if (loading)
-    return <ActivityIndicator size="large" color={COLORS.primary} style={{ flex: 1 }} />;
+  if (loading) {
+    return (
+      <LinearGradient
+        colors={["#05040A", "#120533", "#2E005D"]}
+        style={styles.loadingContainer}
+      >
+        <ActivityIndicator size="large" color="#A47CF3" />
+        <Text style={styles.loadingText}>Finding gyms near you...</Text>
+      </LinearGradient>
+    );
+  }
 
-  if (errorMsg)
-    return <Text style={styles.error}>{errorMsg}</Text>;
+  if (errorMsg) {
+    return (
+      <LinearGradient
+        colors={["#05040A", "#120533", "#2E005D"]}
+        style={styles.loadingContainer}
+      >
+        <Text style={styles.errorText}>{errorMsg}</Text>
+      </LinearGradient>
+    );
+  }
 
-  if (!gyms.length)
-    return <Text style={styles.noGyms}>No gyms found nearby.</Text>;
+  if (!gyms.length) {
+    return (
+      <LinearGradient
+        colors={["#05040A", "#120533", "#2E005D"]}
+        style={styles.loadingContainer}
+      >
+        <Ionicons name="alert-circle-outline" size={42} color="#fff" />
+        <Text style={styles.errorText}>No gyms found nearby.</Text>
+      </LinearGradient>
+    );
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* Map View */}
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: location?.latitude || 37.78825,
-          longitude: location?.longitude || -122.4324,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-        showsUserLocation
-      >
-        {gyms.map((gym) => (
-          <Marker
-            key={gym.place_id}
-            coordinate={{
-              latitude: gym.geometry.location.lat,
-              longitude: gym.geometry.location.lng,
-            }}
-            title={gym.name}
-            description={gym.vicinity}
-          />
-        ))}
-      </MapView>
+    <LinearGradient
+      colors={["#05040A", "#120533", "#2E005D"]}
+      style={{ flex: 1 }}
+    >
+      {/* HEADER */}
+      <View style={styles.headerRow}>
+        <Ionicons name="location-outline" size={24} color="#DDB6FF" />
+        <Text style={styles.title}>Nearby Gyms</Text>
+      </View>
 
-      {/* Gym List */}
-      <View style={styles.listContainer}>
-        <Text style={styles.header}>Nearby Gyms</Text>
+      {/* MAP */}
+      <View style={styles.mapWrapper}>
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: location?.latitude || 37.78825,
+            longitude: location?.longitude || -122.4324,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+          showsUserLocation
+        >
+          {gyms.map((gym) => (
+            <Marker
+              key={gym.place_id}
+              coordinate={{
+                latitude: gym.geometry.location.lat,
+                longitude: gym.geometry.location.lng,
+              }}
+              title={gym.name}
+              description={gym.vicinity}
+            />
+          ))}
+        </MapView>
+      </View>
+
+      {/* LIST */}
+      <View style={styles.bottomCard}>
         <FlatList
           data={gyms}
           keyExtractor={(item) => item.place_id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.gymName}>{item.name}</Text>
-              <Text style={styles.gymAddress}>{item.vicinity}</Text>
+            <View style={styles.gymCard}>
+              <View style={styles.gymHeaderRow}>
+                <Ionicons name="fitness-outline" size={24} color="#C89BFF" />
+                <Text style={styles.gymName} numberOfLines={2}>
+                  {item.name}
+                </Text>
+              </View>
+
+              <Text style={styles.address}>{item.vicinity}</Text>
               {item.rating && (
-                <Text style={styles.gymRating}>⭐ {item.rating} / 5</Text>
+                <Text style={styles.rating}>⭐ {item.rating.toFixed(1)}</Text>
               )}
+
               <TouchableOpacity
-                style={styles.button}
+                style={styles.btn}
                 onPress={() =>
-                  openMap(item.geometry.location.lat, item.geometry.location.lng, item.name)
+                  openMap(
+                    item.geometry.location.lat,
+                    item.geometry.location.lng
+                  )
                 }
               >
-                <Text style={styles.buttonText}>Get Directions</Text>
+                <Ionicons name="navigate-outline" size={18} color="#fff" />
+                <Text style={styles.btnText}>Get Directions</Text>
               </TouchableOpacity>
             </View>
           )}
         />
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
-const { height } = Dimensions.get('window');
+const { height } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 65,
+    alignSelf: "center",
+  },
+  title: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    marginLeft: 8,
+  },
+  mapWrapper: {
+    marginHorizontal: 15,
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    marginTop: 15,
+  },
   map: {
-    height: height * 0.4,
-    margin: 10,
-    borderRadius: 15,
+    height: height * 0.34,
+    width: "100%",
   },
-  listContainer: {
+  bottomCard: {
     flex: 1,
-    paddingHorizontal: 15,
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 10,
-    color: COLORS.primary || '#5B21B6',
-  },
-  card: {
-    backgroundColor: '#f8f8f8',
+    marginTop: 18,
+    backgroundColor: "rgba(255,255,255,0.08)",
     padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 2,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  gymCard: {
+    backgroundColor: "rgba(255,255,255,0.10)",
+    padding: 15,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  gymHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   gymName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+    marginLeft: 8,
+    flex: 1,
   },
-  gymAddress: {
+  address: {
+    color: "#ccc",
+    marginTop: 4,
+    fontSize: 13,
+  },
+  rating: {
+    color: "#FFD369",
+    marginTop: 5,
     fontSize: 14,
-    color: '#666',
-    marginVertical: 5,
+    fontWeight: "600",
   },
-  gymRating: {
-    color: '#333',
-    marginBottom: 5,
-  },
-  button: {
-    backgroundColor: COLORS.primary || '#5B21B6',
+  btn: {
+    marginTop: 10,
+    backgroundColor: "#A47CF3",
     paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+  btnText: {
+    color: "#fff",
+    marginLeft: 6,
+    fontWeight: "700",
   },
-  error: { textAlign: 'center', marginTop: 20, color: 'red' },
-  noGyms: { textAlign: 'center', marginTop: 20, color: '#444' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#fff",
+    marginTop: 10,
+    fontSize: 14,
+  },
+  errorText: {
+    color: "#ffb3b3",
+    fontSize: 16,
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
 });

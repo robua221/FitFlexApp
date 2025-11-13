@@ -8,26 +8,26 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { db, auth } from "../firebase/config";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { LinearGradient } from "expo-linear-gradient";
 
 const EXERCISES = [
-  { name: "Arm Ergometer", icon: "barbell" },
-  { name: "Ascent Trainer", icon: "walk" },
-  { name: "Elliptical Trainer", icon: "bicycle" },
-  { name: "Indoor Cycling", icon: "bicycle" },
-  { name: "Pilates", icon: "accessibility" },
-  { name: "Recumbent Bike", icon: "bicycle" },
-  { name: "Rowing", icon: "rowing" },
-  { name: "Stairstepper", icon: "stairs-up" },
-  { name: "Stepmill", icon: "stairs" },
-  { name: "Stretching", icon: "body" },
-  { name: "Treadmill", icon: "walk" },
-  { name: "Upright Bike", icon: "bicycle" },
+  { name: "Arm Ergometer", icon: "barbell-outline" },
+  { name: "Ascent Trainer", icon: "walk-outline" },
+  { name: "Elliptical Trainer", icon: "bicycle-outline" },
+  { name: "Indoor Cycling", icon: "bicycle-outline" },
+  { name: "Pilates", icon: "accessibility-outline" },
+  { name: "Recumbent Bike", icon: "bicycle-outline" },
+  { name: "Rowing", icon: "water-outline" },
+  { name: "Stairstepper", icon: "trending-up-outline" },
+  { name: "Stepmill", icon: "bar-chart-outline" },
+  { name: "Stretching", icon: "body-outline" },
+  { name: "Treadmill", icon: "walk-outline" },
+  { name: "Upright Bike", icon: "bicycle-outline" },
 ];
 
-// ✅ Calories burned per minute (approx)
 const CALORIES_PER_MIN = 8;
 
 export default function ActivityTrackerScreen() {
@@ -35,13 +35,11 @@ export default function ActivityTrackerScreen() {
 
   const handleAddActivity = async (exerciseName, minutes) => {
     try {
-      const caloriesBurned = minutes * CALORIES_PER_MIN;
       const user = auth.currentUser;
+      if (!user) return Alert.alert("Login error", "Please log in again.");
 
-      if (!user) {
-        Alert.alert("Error", "Please login again.");
-        return;
-      }
+      const caloriesBurned = minutes * CALORIES_PER_MIN;
+      const today = new Date().toISOString().slice(0, 10);
 
       await addDoc(collection(db, "dailyActivity"), {
         userId: user.uid,
@@ -49,14 +47,15 @@ export default function ActivityTrackerScreen() {
         minutes,
         calories: caloriesBurned,
         createdAt: serverTimestamp(),
+        date: today, 
       });
 
       Alert.alert(
-        "✅ Activity Added",
-        `${exerciseName} (${minutes} min)\n${caloriesBurned} calories burned`
+        "🔥 Activity Added",
+        `${exerciseName} (${minutes} min)\n🔥 ${caloriesBurned} calories burned`
       );
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.log(err);
       Alert.alert("Error", "Could not save activity.");
     }
   };
@@ -66,86 +65,113 @@ export default function ActivityTrackerScreen() {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <LinearGradient
+      colors={["#05040A", "#120533", "#2E005D"]}
+      style={styles.container}
+    >
+      <Text style={styles.title}>Track Your Activity</Text>
+
       <TextInput
-        placeholder="Tap to search..."
-        placeholderTextColor="#aaa"
+        placeholder="Search exercises..."
+        placeholderTextColor="#bbb"
         style={styles.search}
         value={search}
         onChangeText={setSearch}
       />
 
-      {filtered.map((item, index) => (
-        <View key={index} style={styles.row}>
-          <View style={styles.left}>
-            <Ionicons name={item.icon} size={20} color="#6E44FF" />
-            <Text style={styles.exerciseName}>{item.name}</Text>
+      <ScrollView style={{ marginTop: 10 }}>
+        {filtered.map((item, index) => (
+          <View key={index} style={styles.row}>
+            <View style={styles.left}>
+              <Ionicons name={item.icon} size={24} color="#A47CF3" />
+              <Text style={styles.exerciseName}>{item.name}</Text>
+            </View>
+
+            <View style={styles.buttons}>
+              <TouchableOpacity
+                style={styles.timeButton}
+                onPress={() => handleAddActivity(item.name, 15)}
+              >
+                <Text style={styles.timeText}>15 min</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.timeButton}
+                onPress={() => handleAddActivity(item.name, 30)}
+              >
+                <Text style={styles.timeText}>30 min</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.customButton}
+                onPress={() => handleAddActivity(item.name, 45)}
+              >
+                <Text style={styles.customText}>custom</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <View style={styles.buttons}>
-            <TouchableOpacity
-              style={styles.timeButton}
-              onPress={() => handleAddActivity(item.name, 15)}
-            >
-              <Text style={styles.timeText}>15 min</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.timeButton}
-              onPress={() => handleAddActivity(item.name, 30)}
-            >
-              <Text style={styles.timeText}>30 min</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.customButton}
-              onPress={() => handleAddActivity(item.name, 45)}
-            >
-              <Text style={styles.customText}>custom</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: "#fff" },
+  container: { flex: 1, paddingTop: 60, paddingHorizontal: 18 },
+  title: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 15,
+  },
   search: {
-    backgroundColor: "#f2f2f2",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    marginTop:40
+    backgroundColor: "rgba(255,255,255,0.08)",
+    padding: 14,
+    borderRadius: 14,
+    fontSize: 15,
+    color: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
   },
   row: {
     flexDirection: "row",
-    padding: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderColor: "#eee",
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 10,
   },
   left: { flexDirection: "row", alignItems: "center" },
-  exerciseName: { marginLeft: 8, fontSize: 15, fontWeight: "500" },
+  exerciseName: {
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
   buttons: { flexDirection: "row", alignItems: "center" },
   timeButton: {
     borderWidth: 1,
-    borderColor: "#6E44FF",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    borderColor: "#A47CF3",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     marginHorizontal: 4,
   },
-  timeText: { color: "#6E44FF", fontSize: 12, fontWeight: "600" },
+  timeText: {
+    color: "#A47CF3",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   customButton: {
     borderWidth: 1,
-    borderColor: "#6E44FF",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    borderColor: "#8E44FF",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
-  customText: { color: "#6E44FF", fontSize: 12 },
+  customText: { color: "#8E44FF", fontSize: 12, fontWeight: "700" },
 });
