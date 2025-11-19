@@ -112,13 +112,12 @@ export default function DashboardScreen({ navigation }) {
 
   //  Load activity for today (new system)
   const loadActivityToday = async (userId) => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    const today = new Date().toISOString().slice(0, 10);
 
     const qAct = query(
       collection(db, "dailyActivity"),
       where("userId", "==", userId),
-      where("createdAt", ">=", Timestamp.fromDate(start))
+      where("date", "==", today)
     );
 
     const snap = await getDocs(qAct);

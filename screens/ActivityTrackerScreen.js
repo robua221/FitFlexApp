@@ -46,8 +46,9 @@ export default function ActivityTrackerScreen() {
         exercise: exerciseName,
         minutes,
         calories: caloriesBurned,
-        createdAt: serverTimestamp(),
-        date: today, 
+        createdAt: serverTimestamp(), // Firestore time
+        timestamp: new Date(), // always valid
+        date: today, // YYYY-MM-DD
       });
 
       Alert.alert(
@@ -118,12 +119,7 @@ export default function ActivityTrackerScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 60, paddingHorizontal: 18 },
-  title: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 15,
-  },
+  title: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 15 },
   search: {
     backgroundColor: "rgba(255,255,255,0.08)",
     padding: 14,
@@ -161,11 +157,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 4,
   },
-  timeText: {
-    color: "#A47CF3",
-    fontSize: 12,
-    fontWeight: "700",
-  },
+  timeText: { color: "#A47CF3", fontSize: 12, fontWeight: "700" },
   customButton: {
     borderWidth: 1,
     borderColor: "#8E44FF",
