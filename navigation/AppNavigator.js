@@ -13,6 +13,7 @@ import SignupScreen from "../screens/SignupScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import ActivityTrackerScreen from "../screens/ActivityTrackerScreen";
 import StepCounterScreen from "../screens/StepCounterScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
 
 const Stack = createStackNavigator();
 
@@ -26,11 +27,11 @@ export default function AppNavigator() {
           gestureEnabled: true,
         }}
       >
-        {/* Authentication */}
+        {/* Auth */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
 
-        {/* Main Screens */}
+        {/* Main */}
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Explore" component={ExploreScreen} />
         <Stack.Screen name="Favorites" component={FavoritesScreen} />
@@ -38,13 +39,13 @@ export default function AppNavigator() {
         <Stack.Screen name="AIAssistant" component={AIAssistant} />
         <Stack.Screen name="ExerciseVideos" component={ExerciseVideosScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
-<Stack.Screen name="StepCounter" component={StepCounterScreen} />
-
         <Stack.Screen
           name="ActivityTracker"
           component={ActivityTrackerScreen}
-
         />
+        <Stack.Screen name="StepCounter" component={StepCounterScreen} />
+
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

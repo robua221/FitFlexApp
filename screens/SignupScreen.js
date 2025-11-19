@@ -3,172 +3,186 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
+  TouchableOpacity,
+  Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../firebase/config";
-import FitFlexLogo from "../components/FitFlexLogo";
+import { auth, db } from "../firebase/config";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { LinearGradient } from "expo-linear-gradient";
+import FitFlexLogo from "../components/FitFlexLogo";
 
 export default function SignupScreen({ navigation }) {
-  const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!name || !email || !password) {
-      alert("Please fill in all fields");
+    if (!displayName.trim() || !email.trim() || !password.trim()) {
+      Alert.alert("Missing fields", "Please fill in all fields.");
+      return;
+    }
+    if (password !== confirm) {
+      Alert.alert("Password mismatch", "Passwords do not match.");
       return;
     }
 
     try {
-      const cred = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password.trim()
-      );
-      if (cred.user) {
-        await updateProfile(cred.user, { displayName: name });
-      }
-      navigation.replace("Home");
-    } catch (err) {
-      alert(err.message);
+      setLoading(true);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Update auth profile
+      await updateProfile(cred.user, { displayName: displayName.trim() });
+
+      // Create Firestore profile document
+      const userRef = doc(db, "users", cred.user.uid);
+      await setDoc(userRef, {
+        displayName: displayName.trim(),
+        email: email.trim(),
+        avatarIndex: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      Alert.alert("Account created", "Welcome to FitFlex!", [
+        { text: "OK", onPress: () => navigation.replace("Home") },
+      ]);
+    } catch (e) {
+      console.log("Signup error:", e.message);
+      Alert.alert("Error", e.message || "Could not sign up.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <LinearGradient
       colors={["#05040A", "#120533", "#2E005D"]}
-      style={styles.container}
+      style={{ flex: 1 }}
     >
       <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1, justifyContent: "center" }}
       >
-        <View style={styles.logoContainer}>
-          <FitFlexLogo size={55} />
-          <Text style={styles.subtitle}>Create your FitFlex account</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <FitFlexLogo size={52} />
+          <Text style={styles.title}>Create your account</Text>
+          <Text style={styles.subtitle}>
+            Join FitFlex and start tracking your workouts and progress.
+          </Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Sign Up</Text>
-
+          <Text style={styles.label}>Display Name</Text>
           <TextInput
-            placeholder="Full Name"
-            placeholderTextColor="#aaa"
-            value={name}
-            onChangeText={setName}
+            value={displayName}
+            onChangeText={setDisplayName}
+            placeholder="What should we call you?"
+            placeholderTextColor="#888"
             style={styles.input}
           />
 
+          <Text style={styles.label}>Email</Text>
           <TextInput
-            placeholder="Email"
-            placeholderTextColor="#aaa"
             value={email}
             onChangeText={setEmail}
+            placeholder="Enter your email"
+            placeholderTextColor="#888"
             keyboardType="email-address"
             autoCapitalize="none"
             style={styles.input}
           />
 
+          <Text style={styles.label}>Password</Text>
           <TextInput
-            placeholder="Password"
-            placeholderTextColor="#aaa"
-            secureTextEntry
             value={password}
             onChangeText={setPassword}
+            placeholder="Enter password"
+            placeholderTextColor="#888"
+            secureTextEntry
             style={styles.input}
           />
 
-          <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-            <Text style={styles.signupButtonText}>Create Account</Text>
-          </TouchableOpacity>
+          <Text style={styles.label}>Confirm Password</Text>
+          <TextInput
+            value={confirm}
+            onChangeText={setConfirm}
+            placeholder="Re-enter password"
+            placeholderTextColor="#888"
+            secureTextEntry
+            style={styles.input}
+          />
 
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.loginLink}>
-              Already have an account?{" "}
-              <Text style={styles.loginHighlight}>Login</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSignup}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? "Creating..." : "Sign Up"}
             </Text>
           </TouchableOpacity>
-        </View>
+
+          <TouchableOpacity
+            onPress={() => navigation.replace("Login")}
+            style={{ marginTop: 15, alignItems: "center" }}
+          >
+            <Text style={styles.linkText}>
+              Already have an account?{" "}
+              <Text style={{ color: "#A47CF3" }}>Log in</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 35,
+  container: {
+    paddingHorizontal: 20,
+    paddingTop: 70,
+    paddingBottom: 30,
   },
-
-  subtitle: {
-    color: "#dcdcdc",
-    textAlign: "center",
-    marginTop: 6,
-    marginHorizontal: 40,
-    fontSize: 14,
-    opacity: 0.85,
-  },
-
-  card: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    padding: 24,
-    borderRadius: 20,
-    marginHorizontal: 24,
-    shadowColor: "#9b59b6",
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-  },
-
-  cardTitle: {
+  title: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 15,
-    textAlign: "center",
+    marginTop: 16,
   },
-
+  subtitle: {
+    color: "#ccc",
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  label: { color: "#ccc", fontSize: 13, marginBottom: 6, marginTop: 10 },
   input: {
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: "#1b1b1f",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     color: "#fff",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    fontSize: 15,
+    borderColor: "rgba(255,255,255,0.2)",
   },
-
-  signupButton: {
-    backgroundColor: "#8e44ad",
+  button: {
+    backgroundColor: "#A47CF3",
+    marginTop: 24,
+    paddingVertical: 12,
     borderRadius: 12,
-    padding: 14,
     alignItems: "center",
-    marginTop: 8,
   },
-
-  signupButtonText: {
+  buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
   },
-
-  loginLink: {
-    marginTop: 14,
-    color: "#ccc",
-    textAlign: "center",
-    fontSize: 14,
-  },
-
-  loginHighlight: {
-    color: "#b388ff",
-    fontWeight: "700",
-  },
+  linkText: { color: "#ccc", fontSize: 13 },
 });
