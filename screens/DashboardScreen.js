@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -6,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  TextInput,
   TouchableOpacity,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,8 +18,9 @@ import {
   where,
   doc,
   getDoc,
+  setDoc,
+  Timestamp,
 } from "firebase/firestore";
-
 
 const AVATARS = [
   require("../assets/avatars/1.png"),
@@ -36,24 +37,25 @@ const AVATARS = [
 export default function DashboardScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState({ displayName: "", avatarIndex: 0 });
+
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [stepData, setStepData] = useState({ steps: 0, calories: 0 });
   const [activityCalories, setActivityCalories] = useState(0);
 
-  const dailyGoal = 600; // kcal goal you show in UI
+  const [dailyGoal, setDailyGoal] = useState(600);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState("");
+
+  const todayKey = () => new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
-    const currentUser = auth.currentUser;
-    setUser(currentUser);
+    const current = auth.currentUser;
+    setUser(current);
+    if (!current) return;
 
-    if (!currentUser) return;
+    refreshDashboard(current.uid);
 
-    const interval = setInterval(() => {
-      refreshDashboard(currentUser.uid);
-    }, 2000);
-
-    refreshDashboard(currentUser.uid);
-
+    const interval = setInterval(() => refreshDashboard(current.uid), 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -61,77 +63,105 @@ export default function DashboardScreen({ navigation }) {
     await Promise.all([
       loadProfile(userId),
       loadFavorites(userId),
-      loadSteps(userId),
-      loadActivity(userId),
+      loadStepsToday(userId),
+      loadActivityToday(userId),
+      loadUserGoal(userId),
     ]);
   };
 
-  // 🔹 Load user profile from users/{uid}
+  //  Load profile (username + avatar)
   const loadProfile = async (userId) => {
-    try {
-      const ref = doc(db, "users", userId);
-      const snap = await getDoc(ref);
+    const ref = doc(db, "users", userId);
+    const snap = await getDoc(ref);
 
-      if (snap.exists()) {
-        const data = snap.data();
-        setProfile({
-          displayName:
-            data.displayName || auth.currentUser?.email || "FitFlex User",
-          avatarIndex:
-            typeof data.avatarIndex === "number" ? data.avatarIndex : 0,
-        });
-      } else {
-        // Fallback if no doc yet
-        setProfile({
-          displayName: auth.currentUser?.email || "FitFlex User",
-          avatarIndex: 0,
-        });
-      }
-    } catch (e) {
-      console.log("Error loading profile:", e.message);
+    if (snap.exists()) {
+      const data = snap.data();
+      setProfile({
+        displayName: data.displayName || user?.email || "FitFlex User",
+        avatarIndex:
+          typeof data.avatarIndex === "number" ? data.avatarIndex : 0,
+      });
     }
   };
 
+  //  Favorites count
   const loadFavorites = async (userId) => {
-    try {
-      const q = query(
-        collection(db, "favorites"),
-        where("userId", "==", userId)
-      );
-      const snap = await getDocs(q);
-      setFavoritesCount(snap.size);
-    } catch (e) {
-      console.log("Error loading favorites:", e.message);
+    const qFav = query(
+      collection(db, "favorites"),
+      where("userId", "==", userId)
+    );
+    const snap = await getDocs(qFav);
+    setFavoritesCount(snap.size);
+  };
+
+  //  Load today steps & calories (new system)
+  const loadStepsToday = async (userId) => {
+    const ref = doc(db, "userStepsDaily", `${userId}_${todayKey()}`);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      const data = snap.data();
+      setStepData({
+        steps: data.steps || 0,
+        calories: data.calories || 0,
+      });
+    } else {
+      setStepData({ steps: 0, calories: 0 });
     }
   };
 
-  const loadSteps = async (userId) => {
-    try {
-      const ref = doc(db, "userSteps", userId);
-      const snap = await getDoc(ref);
-      if (snap.exists()) setStepData(snap.data());
-    } catch (e) {
-      console.log("Error loading steps:", e.message);
+  //  Load activity for today (new system)
+  const loadActivityToday = async (userId) => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const qAct = query(
+      collection(db, "dailyActivity"),
+      where("userId", "==", userId),
+      where("createdAt", ">=", Timestamp.fromDate(start))
+    );
+
+    const snap = await getDocs(qAct);
+
+    let total = 0;
+    snap.forEach((d) => {
+      const c = d.data().calories;
+      if (typeof c === "number") total += c;
+    });
+
+    setActivityCalories(total);
+  };
+
+  //  Load daily goal
+  const loadUserGoal = async (userId) => {
+    const ref = doc(db, "users", userId);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      const g = snap.data().dailyGoal;
+      if (typeof g === "number" && g > 0) {
+        setDailyGoal(g);
+      }
     }
   };
 
-  const loadActivity = async (userId) => {
-    try {
-      const q = query(
-        collection(db, "dailyActivity"),
-        where("userId", "==", userId)
-      );
-      const snap = await getDocs(q);
-      let total = 0;
-      snap.forEach((d) => (total += d.data().calories || 0));
-      setActivityCalories(total);
-    } catch (e) {
-      console.log("Error loading activity:", e.message);
+  //  Save new daily goal
+  const saveGoal = async () => {
+    const parsed = parseInt(goalInput, 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      alert("Enter a valid kcal number.");
+      return;
     }
+
+    const ref = doc(db, "users", user.uid);
+    await setDoc(ref, { dailyGoal: parsed }, { merge: true });
+
+    setDailyGoal(parsed);
+    setEditingGoal(false);
   };
 
-  const totalCalories = (stepData.calories || 0) + activityCalories;
-  const progress = Math.min(totalCalories / dailyGoal, 1);
+  const totalCalories = stepData.calories + activityCalories;
+  const progress = dailyGoal > 0 ? Math.min(totalCalories / dailyGoal, 1) : 0;
 
   const currentAvatar =
     AVATARS[profile.avatarIndex] || require("../assets/icon.png");
@@ -154,15 +184,13 @@ export default function DashboardScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>
-              {profile.displayName || "FitFlex User"}
-            </Text>
+          <View style={{ marginLeft: 10 }}>
+            <Text style={styles.name}>{profile.displayName}</Text>
             <Text style={styles.email}>{user?.email}</Text>
           </View>
         </View>
 
-        {/* STATS CARD */}
+        {/* SUMMARY CARD */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Today's Summary</Text>
 
@@ -175,7 +203,7 @@ export default function DashboardScreen({ navigation }) {
 
             <View style={styles.statBox}>
               <Ionicons name="walk-outline" size={26} color="#fff" />
-              <Text style={styles.statValue}>{stepData.steps || 0}</Text>
+              <Text style={styles.statValue}>{stepData.steps}</Text>
               <Text style={styles.statLabel}>Steps</Text>
             </View>
 
@@ -187,17 +215,63 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
-        {/* PROGRESS CARD */}
+        {/* GOAL CARD */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Daily Goal</Text>
-          <View style={styles.progressTrack}>
-            <View
-              style={[styles.progressFill, { width: `${progress * 100}%` }]}
-            />
+          <View style={styles.goalHeaderRow}>
+            <Text style={styles.sectionTitle}>Daily Calorie Goal</Text>
+
+            {!editingGoal && (
+              <TouchableOpacity
+                onPress={() => {
+                  setGoalInput(String(dailyGoal));
+                  setEditingGoal(true);
+                }}
+              >
+                <Text style={styles.editGoalText}>Edit</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={styles.progressText}>
-            {Math.round(progress * 100)}% of {dailyGoal} kcal goal
-          </Text>
+
+          {editingGoal ? (
+            <View style={styles.goalEditRow}>
+              <TextInput
+                value={goalInput}
+                onChangeText={setGoalInput}
+                keyboardType="numeric"
+                placeholder="Enter kcal"
+                placeholderTextColor="#999"
+                style={styles.goalInput}
+              />
+
+              <TouchableOpacity style={styles.goalButton} onPress={saveGoal}>
+                <Text style={styles.goalButtonText}>Save</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.goalButton, styles.cancelButton]}
+                onPress={() => setEditingGoal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[styles.progressFill, { width: `${progress * 100}%` }]}
+                />
+              </View>
+
+              <Text style={styles.progressText}>
+                {Math.round(progress * 100)}% of {dailyGoal} kcal goal
+              </Text>
+
+              <Text style={styles.progressSubText}>
+                Steps: {stepData.calories} kcal · Activity: {activityCalories}{" "}
+                kcal
+              </Text>
+            </>
+          )}
         </View>
       </ScrollView>
     </LinearGradient>
@@ -206,11 +280,13 @@ export default function DashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { padding: 20 },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 25,
   },
+
   avatar: { width: 72, height: 72, borderRadius: 36 },
   editBadge: {
     position: "absolute",
@@ -222,6 +298,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#05040A",
   },
+
   name: { color: "#fff", fontSize: 22, fontWeight: "700" },
   email: { color: "#bbb", fontSize: 14, marginTop: 2 },
 
@@ -233,6 +310,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
   },
+
   sectionTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
 
   row: {
@@ -240,8 +318,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 12,
   },
+
   statBox: { alignItems: "center", width: "32%" },
-  statValue: { color: "#fff", fontSize: 22, fontWeight: "800", marginTop: 6 },
+  statValue: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    marginTop: 6,
+  },
   statLabel: { color: "#ccc", marginTop: 2, fontSize: 12 },
 
   progressTrack: {
@@ -249,16 +333,70 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 10,
     marginTop: 12,
+    overflow: "hidden",
   },
+
   progressFill: {
     height: "100%",
     backgroundColor: "#A47CF3",
     borderRadius: 10,
   },
+
   progressText: {
-    color: "#ccc",
+    color: "#fff",
     marginTop: 8,
     textAlign: "center",
-    fontSize: 13,
+    fontWeight: "600",
   },
+
+  progressSubText: {
+    color: "#ccc",
+    marginTop: 4,
+    textAlign: "center",
+    fontSize: 12,
+  },
+
+  goalHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  editGoalText: {
+    color: "#A47CF3",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
+  goalEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  goalInput: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.2)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: "#fff",
+    marginRight: 8,
+  },
+
+  goalButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#A47CF3",
+    borderRadius: 10,
+    marginLeft: 4,
+  },
+  goalButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+
+  cancelButton: {
+    backgroundColor: "transparent",
+    borderColor: "#aaa",
+    borderWidth: 1,
+  },
+  cancelText: { color: "#ccc" },
 });

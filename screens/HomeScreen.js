@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,35 @@ import {
   ScrollView,
 } from "react-native";
 import { signOut } from "firebase/auth";
-import { auth } from "../firebase/config";
+import { auth, db } from "../firebase/config";
 import FitFlexLogo from "../components/FitFlexLogo";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function HomeScreen({ navigation }) {
+  const [username, setUsername] = useState("");
+
+  // Load displayName from Firestore (users/{uid})
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const loadProfile = async () => {
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        setUsername(data.displayName || user.email || "FitFlex User");
+      } else {
+        setUsername(user.email || "FitFlex User");
+      }
+    };
+
+    loadProfile();
+  }, []);
+
   const handleLogout = async () => {
     await signOut(auth);
     navigation.replace("Login");
@@ -25,14 +48,16 @@ export default function HomeScreen({ navigation }) {
     >
       <ScrollView contentContainerStyle={styles.content}>
         <FitFlexLogo size={52} />
-        <Text style={styles.greeting}>Welcome back 👋</Text>
+        {/* 👇 USERNAME INCLUDED HERE */}
+        <Text style={styles.greeting}>Welcome back, {username} 👋</Text>
+
         <Text style={styles.subtitle}>
           Your all-in-one gym companion for workouts, tracking, and guidance.
         </Text>
 
         {/* GRID SECTION */}
         <View style={styles.grid}>
-          {/* EXPLORE EXERCISES */}
+          {/* EXPLORE */}
           <TouchableOpacity
             style={[
               styles.card,
@@ -71,7 +96,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.cardDesc}>Find gyms near your location.</Text>
           </TouchableOpacity>
 
-          {/* EXERCISE VIDEOS */}
+          {/* VIDEOS */}
           <TouchableOpacity
             style={[
               styles.card,
@@ -81,7 +106,7 @@ export default function HomeScreen({ navigation }) {
           >
             <Ionicons name="logo-youtube" size={28} color="#fff" />
             <Text style={styles.cardTitle}>Exercise Videos</Text>
-            <Text style={styles.cardDesc}>Watch YouTube workout demos.</Text>
+            <Text style={styles.cardDesc}>Watch workout demos.</Text>
           </TouchableOpacity>
 
           {/* AI ASSISTANT */}
@@ -117,7 +142,7 @@ export default function HomeScreen({ navigation }) {
           >
             <Ionicons name="fitness-outline" size={28} color="#fff" />
             <Text style={styles.cardTitle}>Activity Tracker</Text>
-            <Text style={styles.cardDesc}>Log your gym activities.</Text>
+            <Text style={styles.cardDesc}>Log your workouts.</Text>
           </TouchableOpacity>
 
           {/* STEP COUNTER */}

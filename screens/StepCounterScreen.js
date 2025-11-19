@@ -1,101 +1,94 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Pedometer } from "expo-sensors";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebase/config";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export default function StepCounterScreen() {
-  const [liveSteps, setLiveSteps] = useState(0);
+  const [steps, setSteps] = useState(0);
   const [available, setAvailable] = useState(false);
-  const [dailyTotal, setDailyTotal] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const initialSavedSteps = useRef(0);
+  // Today Key
+  const getTodayKey = () => new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     async function init() {
       const isAvailable = await Pedometer.isAvailableAsync();
       setAvailable(isAvailable);
 
-      if (!isAvailable) return;
-
-      // Get today's saved steps from Firestore
-      const user = auth.currentUser;
-      if (user) {
-        const ref = doc(db, "userSteps", user.uid);
-        const snap = await getDoc(ref);
-
-        const today = new Date().toISOString().slice(0, 10);
-        if (snap.exists() && snap.data().date === today) {
-          initialSavedSteps.current = snap.data().steps || 0;
-          setDailyTotal(initialSavedSteps.current);
-        } else {
-          initialSavedSteps.current = 0;
-          setDailyTotal(0);
-        }
+      if (!isAvailable) {
+        setErrorMsg("Pedometer not available on this device.");
+        return;
       }
 
-      // Start pedometer subscription
-      const sub = Pedometer.watchStepCount((result) => {
-        setLiveSteps(result.steps);
-
-        const newTotal = initialSavedSteps.current + result.steps;
-        setDailyTotal(newTotal);
+      const subscription = Pedometer.watchStepCount(async (res) => {
+        setSteps(res.steps);
+        await saveStepsToFirestore(res.steps);
       });
 
-      return () => sub && sub.remove();
+      return () => subscription && subscription.remove();
     }
 
     init();
   }, []);
 
-  // Save updated total every 5 seconds
-  useEffect(() => {
+  const saveStepsToFirestore = async (currentSteps) => {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+      setErrorMsg("Please log in to sync steps.");
+      return;
+    }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const calories = Math.round(dailyTotal * 0.04);
+    const dateKey = getTodayKey();
+    const calories = Math.round(currentSteps * 0.04); // simple estimate
 
-    const interval = setInterval(async () => {
-      await setDoc(doc(db, "userSteps", user.uid), {
-        steps: dailyTotal,
+    const ref = doc(db, "userStepsDaily", `${user.uid}_${dateKey}`);
+    await setDoc(
+      ref,
+      {
+        userId: user.uid,
+        date: dateKey,
+        steps: currentSteps,
         calories,
-        date: today,
-        updatedAt: Date.now(),
-      });
-    }, 5000);
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  };
 
-    return () => clearInterval(interval);
-  }, [dailyTotal]);
-
-  const caloriesBurned = Math.round(dailyTotal * 0.04);
+  const calories = Math.round(steps * 0.04);
 
   return (
     <LinearGradient
-      colors={["#0A061A", "#140A36", "#2E0066"]}
+      colors={["#05040A", "#120533", "#2E005D"]}
       style={styles.container}
     >
-      <Text style={styles.title}>Live Step Counter</Text>
+      <Text style={styles.title}>Step Counter</Text>
 
       {!available ? (
-        <Text style={styles.unavailable}>Pedometer not supported.</Text>
+        <Text style={styles.unavailable}>
+          {errorMsg || "Pedometer not available."}
+        </Text>
       ) : (
         <>
           <View style={styles.card}>
-            <Ionicons name="walk-outline" size={54} color="#A47CF3" />
-            <Text style={styles.value}>{dailyTotal}</Text>
-            <Text style={styles.label}>Today's Steps</Text>
+            <Ionicons name="walk-outline" size={46} color="#fff" />
+            <Text style={styles.value}>{steps}</Text>
+            <Text style={styles.label}>Steps Today</Text>
           </View>
 
           <View style={styles.card}>
-            <Ionicons name="flame-outline" size={54} color="#FF8A4C" />
-            <Text style={styles.value}>{caloriesBurned}</Text>
+            <Ionicons name="flame-outline" size={46} color="#fff" />
+            <Text style={styles.value}>{calories}</Text>
             <Text style={styles.label}>Calories Burned</Text>
           </View>
 
-          <Text style={styles.liveText}>Live session steps: {liveSteps}</Text>
+          <Text style={styles.syncNote}>
+            Steps & calories are synced with your Dashboard for today's date.
+          </Text>
         </>
       )}
     </LinearGradient>
@@ -103,46 +96,31 @@ export default function StepCounterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 80,
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  title: {
-    color: "#fff",
-    fontSize: 26,
-    fontWeight: "800",
-    marginBottom: 35,
-    letterSpacing: 1,
-  },
+  container: { flex: 1, paddingTop: 90, alignItems: "center" },
+  title: { color: "#fff", fontSize: 28, fontWeight: "700", marginBottom: 30 },
   card: {
-    width: "88%",
-    backgroundColor: "rgba(255,255,255,0.07)",
-    paddingVertical: 35,
-    borderRadius: 20,
+    width: "85%",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    padding: 25,
+    borderRadius: 18,
     alignItems: "center",
-    marginBottom: 28,
-    borderWidth: 1.5,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
   },
-  value: {
-    color: "#fff",
-    fontSize: 44,
-    fontWeight: "900",
-    marginTop: 10,
-  },
-  label: {
-    color: "#bbb",
-    marginTop: 4,
-    fontSize: 16,
-  },
-  liveText: {
-    color: "#aaa",
-    marginTop: 10,
-  },
+  value: { color: "#fff", fontSize: 42, fontWeight: "800", marginTop: 10 },
+  label: { color: "#ccc", marginTop: 6, fontSize: 15 },
   unavailable: {
     color: "#ccc",
-    fontSize: 18,
-    marginTop: 40,
+    fontSize: 16,
+    paddingHorizontal: 20,
+    textAlign: "center",
+  },
+  syncNote: {
+    color: "#ccc",
+    fontSize: 13,
+    marginTop: 10,
+    paddingHorizontal: 20,
+    textAlign: "center",
   },
 });
