@@ -69,7 +69,7 @@ export default function DashboardScreen({ navigation }) {
     ]);
   };
 
-  //  Load profile (username + avatar)
+  //  Load profile
   const loadProfile = async (userId) => {
     const ref = doc(db, "users", userId);
     const snap = await getDoc(ref);
@@ -94,7 +94,7 @@ export default function DashboardScreen({ navigation }) {
     setFavoritesCount(snap.size);
   };
 
-  //  Load today steps & calories (new system)
+  //  Load today steps & calories
   const loadStepsToday = async (userId) => {
     const ref = doc(db, "userStepsDaily", `${userId}_${todayKey()}`);
     const snap = await getDoc(ref);
@@ -110,7 +110,7 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  //  Load activity for today (new system)
+  //  Load activity for today
   const loadActivityToday = async (userId) => {
     const today = new Date().toISOString().slice(0, 10);
 
